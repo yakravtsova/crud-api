@@ -14,3 +14,5 @@ export interface CustomServerResponse {
 export interface CustomError extends Error {
     statusCode: number;
 }
+
+export interface BooleanObject { [key: string]: boolean };

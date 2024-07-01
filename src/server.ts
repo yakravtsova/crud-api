@@ -5,10 +5,12 @@ import { errorHandler } from "./errors/errorHandler";
 
 export const app = (): Server => {
     const server = createServer(async(req, res) => {
-        try {res.setHeader('Content-Type', 'application/json');
-        const serverResponse:CustomServerResponse = await handlerRequest(req, res);
-        res.statusCode = serverResponse.statusCode;
-        res.end(serverResponse.data);}
+        try {
+            res.setHeader('Content-Type', 'application/json');
+            const serverResponse:CustomServerResponse = await handlerRequest(req, res);
+            res.statusCode = serverResponse.statusCode;
+            res.end(serverResponse.data);
+        }
         catch(err) {errorHandler(err, res)}
     });
     return server;

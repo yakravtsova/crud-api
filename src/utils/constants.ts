@@ -1,4 +1,4 @@
-export const CHECK_BASE_URL_REGEX = new RegExp(/\/api\/users/);
+export const CHECK_BASE_URL_REGEX = new RegExp(/^\/api\/users(?:\/[^\/]+)?$/);
 export const BASE_URL = "/api/users";
 
 export enum RESPONSE_STATUS_CODES {
@@ -16,3 +16,13 @@ export enum REQUEST_METHODS {
     PUT = "PUT",
     DELETE = "DELETE"
 }
+
+export enum ERROR_MESSAGES {
+    NOT_FOUND = "The server cannot find the requested resource.",
+    INTERNAL_SERVER_ERROR = "Internal Server Error.",
+    INVALID_UUID = "Invalid user ID."
+}
+
+export const USERNAME = "username";
+export const AGE = "age";
+export const HOBBIES = "hobbies";
