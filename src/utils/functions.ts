@@ -4,7 +4,7 @@ import { AGE, BASE_URL, CHECK_BASE_URL_REGEX, HOBBIES, REQUEST_METHODS, USERNAME
 import { NotFoundError } from "../errors/NotFoundError";
 import { validate } from "uuid";
 import { BadRequestError } from "../errors/BadRequestError";
-import { createUser, deleteUserByIdResponse, getAllUsersResponse, getUserByIdResponse } from "../db/UsersDatabase";
+import { createUser, deleteUserByIdResponse, getAllUsersResponse, getUserByIdResponse, updateUserByIdResponse } from "../db/UsersDatabase";
 
 const bodyParser = <T>(req: IncomingMessage): Promise<T> => {
     return new Promise((res, rej) => {
@@ -16,11 +16,12 @@ const bodyParser = <T>(req: IncomingMessage): Promise<T> => {
     
         req.on("end", () => {
             try{
+                if (!data) throw new BadRequestError("Please, provide body.")
                 const result: T = JSON.parse(data.toString())
                 res(result);
             }
             catch(err) {
-                rej(new Error())
+                rej(err)
             }
         })
         
@@ -29,6 +30,11 @@ const bodyParser = <T>(req: IncomingMessage): Promise<T> => {
 
 const isBodyValid = (body: object): boolean => {
     const isValid: BooleanObject = {};
+    const bodyKeys = Object.keys(body);
+    if (bodyKeys.length > 3) {
+        const extraKeys = bodyKeys.filter(key => ![USERNAME, AGE, HOBBIES].includes(key));
+        throw new BadRequestError(`Body contains extra properties: ${extraKeys.join(", ")}`)
+    }
     isValid[USERNAME] = (USERNAME in body) && (typeof body[USERNAME] === "string");
     isValid[AGE] = (AGE in body) && (typeof body[AGE] === "number");
     isValid[HOBBIES] = (HOBBIES in body) && Array.isArray(body[HOBBIES]) && body[HOBBIES].every((item) => typeof item === "string");
@@ -46,8 +52,6 @@ const isBodyValid = (body: object): boolean => {
 export const handlerRequest = async(req: IncomingMessage): Promise<CustomServerResponse> => {
     let response: CustomServerResponse;
     const {url, method} = req;
-    console.log("url: ", url);
-    console.log("method: ", method)
     if (CHECK_BASE_URL_REGEX.test(url)) {
         if (url === BASE_URL) {
             if (method === REQUEST_METHODS.GET) {
@@ -69,6 +73,13 @@ export const handlerRequest = async(req: IncomingMessage): Promise<CustomServerR
                     }
                     case REQUEST_METHODS.DELETE: {
                         response = deleteUserByIdResponse(supposedUserUUID);
+                        break;
+                    }
+                    case REQUEST_METHODS.PUT: {
+                        const body = await bodyParser<User>(req); 
+                        if (isBodyValid(body)) {
+                            response = updateUserByIdResponse(supposedUserUUID, body)
+                        }
                         break;
                     }
                     default: throw new NotFoundError()

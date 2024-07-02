@@ -45,3 +45,15 @@ export const deleteUserByIdResponse = (id: string) : CustomServerResponse => {
         statusCode: RESPONSE_STATUS_CODES.NO_CONTENT
     }
 }
+
+export const updateUserByIdResponse = (id: string, body: User) : CustomServerResponse => {
+    const user = {...findUserById(id), ...body};
+    users = users.map(u => {
+        if (u.id === id) return user;
+        else return u;
+    })
+    return {
+        data: JSON.stringify({user}),
+        statusCode: RESPONSE_STATUS_CODES.OK
+    }
+}
