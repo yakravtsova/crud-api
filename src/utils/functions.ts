@@ -1,12 +1,12 @@
-import { IncomingMessage, ServerResponse } from "http";
+import { IncomingMessage } from "http";
 import { BooleanObject, CustomServerResponse, User } from "../types/types";
-import { AGE, BASE_URL, CHECK_BASE_URL_REGEX, HOBBIES, REQUEST_METHODS, RESPONSE_STATUS_CODES, USERNAME } from "./constants";
+import { AGE, BASE_URL, CHECK_BASE_URL_REGEX, HOBBIES, REQUEST_METHODS, USERNAME } from "./constants";
 import { NotFoundError } from "../errors/NotFoundError";
 import { validate } from "uuid";
 import { BadRequestError } from "../errors/BadRequestError";
-import { createUser, getAllUsersResponse } from "../db/UsersDatabase";
+import { createUser, getAllUsersResponse, getUserByIdResponse } from "../db/UsersDatabase";
 
-const bodyParser = (req: IncomingMessage) => {
+const bodyParser = <T>(req: IncomingMessage): Promise<T> => {
     return new Promise((res, rej) => {
         let data: string = "";
         
@@ -16,9 +16,10 @@ const bodyParser = (req: IncomingMessage) => {
     
         req.on("end", () => {
             try{
-                const result = JSON.parse(data.toString())
-                res(result);}
-                catch(err) {
+                const result: T = JSON.parse(data.toString())
+                res(result);
+            }
+            catch(err) {
                 rej(new Error())
             }
         })
@@ -26,11 +27,11 @@ const bodyParser = (req: IncomingMessage) => {
     })
 }
 
-const isBodyValid = (body: any): boolean => {
+const isBodyValid = (body: object): boolean => {
     const isValid: BooleanObject = {};
     isValid[USERNAME] = (USERNAME in body) && (typeof body[USERNAME] === "string");
     isValid[AGE] = (AGE in body) && (typeof body[AGE] === "number");
-    isValid[HOBBIES] = (HOBBIES in body) && Array.isArray(body[HOBBIES]) && body[HOBBIES].every((item: any) => typeof item === "string");
+    isValid[HOBBIES] = (HOBBIES in body) && Array.isArray(body[HOBBIES]) && body[HOBBIES].every((item) => typeof item === "string");
     const result = Object.values(isValid).reduce((acc: boolean, value: boolean): boolean => acc && value, true);
     if (result) return result;
     else {
@@ -42,31 +43,34 @@ const isBodyValid = (body: any): boolean => {
     }
 }
 
-export const handlerRequest = async(req: IncomingMessage, res: ServerResponse): Promise<CustomServerResponse> => {
+export const handlerRequest = async(req: IncomingMessage): Promise<CustomServerResponse> => {
     let response: CustomServerResponse;
     const {url, method} = req;
     console.log("url: ", url);
     console.log("method: ", method)
-    try {
-        if (CHECK_BASE_URL_REGEX.test(url)) {
-            if (url === BASE_URL) {
-                if (method === REQUEST_METHODS.GET) {
-                    response = getAllUsersResponse()
-                } 
-                if (method === REQUEST_METHODS.POST) {
-                    const body: any = await bodyParser(req);
-                    if (isBodyValid(body)) {
-                        response = createUser(body)
-                    }
+    if (CHECK_BASE_URL_REGEX.test(url)) {
+        if (url === BASE_URL) {
+            if (method === REQUEST_METHODS.GET) {
+                response = getAllUsersResponse()
+            } 
+            else if (method === REQUEST_METHODS.POST) {
+                const body = await bodyParser<User>(req); 
+                if (isBodyValid(body)) {
+                    response = createUser(body)
                 }
-            } else {
-                const supposedUserUUID = url.split("/")[3]
-                if (validate(supposedUserUUID)) {
-                    console.log("valid")
-                } else throw new BadRequestError()
-            }
-        } else throw new NotFoundError()
-    }
-    catch(err) {throw err}
+            } else throw new NotFoundError();
+        } else {
+            const supposedUserUUID = url.split("/")[3]
+            if (validate(supposedUserUUID)) {
+                switch (method) {
+                    case REQUEST_METHODS.GET: {
+                        response = getUserByIdResponse(supposedUserUUID);
+                        break;
+                    }
+                    default: throw new NotFoundError()
+                }
+            } else throw new BadRequestError()
+        }
+    } else throw new NotFoundError()
     return response;
 }
