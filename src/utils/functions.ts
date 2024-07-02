@@ -4,7 +4,7 @@ import { AGE, BASE_URL, CHECK_BASE_URL_REGEX, HOBBIES, REQUEST_METHODS, USERNAME
 import { NotFoundError } from "../errors/NotFoundError";
 import { validate } from "uuid";
 import { BadRequestError } from "../errors/BadRequestError";
-import { createUser, getAllUsersResponse, getUserByIdResponse } from "../db/UsersDatabase";
+import { createUser, deleteUserByIdResponse, getAllUsersResponse, getUserByIdResponse } from "../db/UsersDatabase";
 
 const bodyParser = <T>(req: IncomingMessage): Promise<T> => {
     return new Promise((res, rej) => {
@@ -65,6 +65,10 @@ export const handlerRequest = async(req: IncomingMessage): Promise<CustomServerR
                 switch (method) {
                     case REQUEST_METHODS.GET: {
                         response = getUserByIdResponse(supposedUserUUID);
+                        break;
+                    }
+                    case REQUEST_METHODS.DELETE: {
+                        response = deleteUserByIdResponse(supposedUserUUID);
                         break;
                     }
                     default: throw new NotFoundError()

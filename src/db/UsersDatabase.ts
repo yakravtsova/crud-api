@@ -3,7 +3,7 @@ import { CustomServerResponse, User } from "../types/types";
 import { RESPONSE_STATUS_CODES } from "../utils/constants";
 import { v4 as uuidv4 } from 'uuid';
 
-export const users: User[] = [];
+export let users: User[] = [];
 
 export const getAllUsersResponse = () : CustomServerResponse => {
     return {
@@ -34,5 +34,14 @@ export const getUserByIdResponse = (id: string) : CustomServerResponse => {
     return {
         data: JSON.stringify({user}),
         statusCode: RESPONSE_STATUS_CODES.OK
+    }
+}
+
+export const deleteUserByIdResponse = (id: string) : CustomServerResponse => {
+    findUserById(id);
+    users = users.filter(user => user.id !== id);
+    return {
+        data: null,
+        statusCode: RESPONSE_STATUS_CODES.NO_CONTENT
     }
 }
